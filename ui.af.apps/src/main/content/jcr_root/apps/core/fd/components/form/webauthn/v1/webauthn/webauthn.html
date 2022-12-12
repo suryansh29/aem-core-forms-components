@@ -20,7 +20,7 @@ data-sly-use.formstructparser="com.adobe.cq.forms.core.components.models.form.Fo
   type="button"
   value="${button.value}"
   id="${component.id}"
-  class="cmp-webauthn__register"
+  class="cmp-webauthn__register cmp-button"
   disabled="${!button.enabled}"
   title="${button.tooltipVisible ? '' : button.tooltipText}"
   data-cmp-visible="${button.visible}"
@@ -28,23 +28,11 @@ data-sly-use.formstructparser="com.adobe.cq.forms.core.components.models.form.Fo
   data-cmp-is="adaptiveFormWebAuthn"
   aria-label="${button.label.value}"
   data-cmp-adaptiveformcontainer-path="${formstructparser.formContainerPath}">
-    <span data-sly-test="${button.label.value}" class="cmp-button__text">${button.label.value}</span>
+    <span data-sly-test="${button.label.value}" class="cmp-button__text">Registration</span>
   </button>
-  <!-- <button 
-  type="button"
-  class="cmp-webauthn__authenticate"
-  disabled="${!button.enabled}"
-  title="${button.tooltipVisible ? '' : button.tooltipText}"
-  data-cmp-visible="${button.visible}"
-  data-cmp-enabled="${button.enabled}"
-  data-cmp-is="adaptiveFormWebAuthn"
-  aria-label="${button.label.value}"
-  data-cmp-adaptiveformcontainer-path="${formstructparser.formContainerPath}">
-    <span data-sly-test="${button.label.value}" class="cmp-button__text">Authenticate</span>
-  </button> -->
   <button 
   type="button"
-  class="cmp-webauthn__prefill"
+  class="cmp-webauthn__prefill cmp-button"
   disabled="${!button.enabled}"
   title="${button.tooltipVisible ? '' : button.tooltipText}"
   data-cmp-visible="${button.visible}"
@@ -52,7 +40,7 @@ data-sly-use.formstructparser="com.adobe.cq.forms.core.components.models.form.Fo
   data-cmp-is="adaptiveFormWebAuthn"
   aria-label="${button.label.value}"
   data-cmp-adaptiveformcontainer-path="${formstructparser.formContainerPath}">
-    <span data-sly-test="${button.label.value}" class="cmp-button__text">Authenticate</span>
+    <span data-sly-test="${button.label.value}" class="cmp-button__text">Prefill</span>
   </button>
   <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.es5.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>

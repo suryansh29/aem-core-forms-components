@@ -14,7 +14,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-(function () {
+(function (guideBridge) {
 
     const fidoServerUrl = "http://localhost:8000";
     const { startAuthentication, browserSupportsWebAuthn, startRegistration } = SimpleWebAuthnBrowser;
@@ -33,14 +33,12 @@
         };
 
         constructor(params) {
-            console.log("====== init WebAuthn", params);
-            //this.#attachRegistrationEventListener();
-            //this.#attachAuthenticationEventListener();
-            //this.#attachPrefillEventListener();
+            console.log("====== init WebAuthn ======", params);
             this.#webAuthnRegister();
+            this.#webAuthnAuthenticator()
         }
 
-        #webAuthnRegister(){
+        #webAuthnRegister() {
             const registerButton = document.querySelector(WebAuthn.selectors.register);
             registerButton.addEventListener("click", async () => {
                 const res = await fetch('/adobe/forms/webauthn/startRegistration');
@@ -61,6 +59,11 @@
                 credential.id = cred.id;
                 credential.rawId = base64url.encode(cred.rawId);
                 credential.type = cred.type;
+                credential.clientExtensionResults = {
+                    credProps: {
+                        rk: true
+                    }
+                };
 
                 if (cred.response) {
                     const clientDataJSON =
@@ -83,141 +86,65 @@
             });
         }
 
-        #attachRegistrationEventListener() {
-            const registerButton = document.querySelector(WebAuthn.selectors.register);
-            registerButton.addEventListener("click", async () => {
+        #webAuthnAuthenticator() {
+            const authenticateButton = document.querySelector(WebAuthn.selectors.prefill);
+            authenticateButton.addEventListener("click", async () => {
+                const res = await fetch('/adobe/forms/webauthn/startAuthentication');
+                const resJson = await res.json();
+                const options = JSON.parse(resJson.credential).publicKey;
+                options.allowCredentials = [];
 
-                const resp = await fetch(fidoServerUrl + '/generate-registration-options');
+                options.challenge = base64url.decode(options.challenge);
+                const cred  = await navigator.credentials.get({
+                    publicKey: options,
+                });
 
-                let attResp;
-                try {
-                    const opts = await resp.json();
-
-                    // Require a resident key for this demo
-                    opts.authenticatorSelection.residentKey = 'required';
-                    opts.authenticatorSelection.requireResidentKey = true;
-                    opts.extensions = {
-                        credProps: true,
-                    };
-
-                    console.log('Registration Options', JSON.stringify(opts, null, 2));
-                    
-                    //TODO
-                    //hideAuthForm();
-
-                    attResp = await startRegistration(opts);
-                    console.log('Registration Response', JSON.stringify(attResp, null, 2));
-                } catch (error) {
-                    if (error.name === 'InvalidStateError') {
-                        console.log('Error: Authenticator was probably already registered by user');
-                    } else {
-                        console.log(error);
+                const credential = {};
+                credential.id = cred.id;
+                credential.type = cred.type;
+                credential.rawId = base64url.encode(cred.rawId);
+                credential.clientExtensionResults = {
+                    credProps: {
+                        rk: true
                     }
-                    throw error;
+                };
+
+                if (cred.response) {
+                    const clientDataJSON =
+                        base64url.encode(cred.response.clientDataJSON);
+                    const authenticatorData =
+                        base64url.encode(cred.response.authenticatorData);
+                    const signature =
+                        base64url.encode(cred.response.signature);
+                    const userHandle =
+                        base64url.encode(cred.response.userHandle);
+                    credential.response = {
+                        clientDataJSON,
+                        authenticatorData,
+                        signature,
+                        userHandle,
+                    };
                 }
 
-                const verificationResp = await fetch(fidoServerUrl+'/verify-registration', {
+                const resp = await fetch('/adobe/forms/webauthn/finishAuthentication' , {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(attResp),
+                    body: JSON.stringify({publicKeyCredential: credential, id: resJson.id})
                 });
-
-                const verificationJSON = await verificationResp.json();
-                console.log('Server Response', JSON.stringify(verificationJSON, null, 2));
-
-                if (verificationJSON && verificationJSON.verified) {
-                    console.log(`Authenticator registered!`);
-                } else {
-                    console.log(`Oh no, something went wrong! Response: <pre>${JSON.stringify(
-                        verificationJSON,
-                    )}</pre>`);
+                const data = await resp.json();
+                if(typeof data === "object") {
+                    guideBridge.getFormModel().importData(data);
                 }
-            }
-            );
+                console.log(data);
+
+            })
         }
-
-        #attachAuthenticationEventListener() {
-            const authenticateButton = document.querySelector(WebAuthn.selectors.authenticate);
-            authenticateButton.addEventListener('click', async () => {
-      
-                const resp = await fetch(fidoServerUrl+'/generate-authentication-options');
-      
-                let asseResp;
-                try {
-                  const opts = await resp.json();
-                  console.log('Authentication Options', JSON.stringify(opts, null, 2));
-      
-                  asseResp = await startAuthentication(opts);
-                  console.log('Authentication Response', JSON.stringify(asseResp, null, 2));
-                } catch (error) {
-                  throw new Error(error);
-                }
-      
-                const verificationResp = await fetch(fidoServerUrl+'/verify-authentication', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(asseResp),
-                });
-      
-                const verificationJSON = await verificationResp.json();
-                console.log('Server Response', JSON.stringify(verificationJSON, null, 2));
-      
-                if (verificationJSON && verificationJSON.verified) {
-                  console.log(`User authenticated!`);
-                } else {
-                  console.log(`Oh no, something went wrong! Response: <pre>${JSON.stringify(
-                    verificationJSON,
-                  )}</pre>`);
-                }
-              });
-        }
-        
-        #attachPrefillEventListener() {
-            const authenticateButton = document.querySelector(WebAuthn.selectors.prefill);
-            authenticateButton.addEventListener('click', async () => {
-      
-                const resp = await fetch(fidoServerUrl+'/generate-authentication-options');
-      
-                let asseResp;
-                try {
-                  const opts = await resp.json();
-                  console.log('Authentication Options', JSON.stringify(opts, null, 2));
-      
-                  asseResp = await startAuthentication(opts);
-                  console.log('Authentication Response', JSON.stringify(asseResp, null, 2));
-                } catch (error) {
-                  throw new Error(error);
-                }
-      
-                const verificationResp = await fetch(fidoServerUrl+'/verify-authentication', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(asseResp),
-                });
-      
-                const verificationJSON = await verificationResp.json();
-                console.log('Server Response', JSON.stringify(verificationJSON, null, 2));
-      
-                if (verificationJSON && verificationJSON.verified) {
-                  console.log(`User authenticated!`);
-                } else {
-                  console.log(`Oh no, something went wrong! Response: <pre>${JSON.stringify(
-                    verificationJSON,
-                  )}</pre>`);
-                }
-              });
-        }
-
     }
 
     FormView.Utils.setupField(({ element, formContainer }) => {
         return new WebAuthn({ element, formContainer })
     }, WebAuthn.selectors.self);
 
-}());
+}(guideBridge));
