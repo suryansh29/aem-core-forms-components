@@ -1,0 +1,18 @@
+.cmp-webauthn__prefill {
+    background: #ffffff !important;
+    border-radius: 0.5rem !important;
+    padding: 0.15rem 0.6rem !important;
+    color: #666666 !important;
+    border: 1.5px solid #666 !important;
+}
+
+.cmp-webauthn__prefill span {
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 14px;
+}
+
+.cmp-webauthn__register {
+    display: none;
+}
+
