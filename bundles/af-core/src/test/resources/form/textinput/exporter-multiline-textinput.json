@@ -1,0 +1,28 @@
+{
+  "id": "textinput-7346ac5dd9",
+  "fieldType": "multiline-input",
+  "name": "abc",
+  "visible": false,
+  "description": "dummy",
+  "type": "string",
+  "required": false,
+  "enabled": true,
+  "readOnly": false,
+  "label": {
+    "richText": false,
+    "visible": true,
+    "value": "def"
+  },
+  "events": {
+    "custom:setProperty": [
+      "$event.payload"
+    ]
+  },
+  "properties": {
+    "fd:dor": {
+      "dorExclusion": false
+    },
+    "fd:path": "/content/multiline-textinput"
+  },
+  ":type": "core/fd/components/form/textinput/v1/textinput"
+}

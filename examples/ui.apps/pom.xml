@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.adobe.aem</groupId>
         <artifactId>core-forms-components-parent</artifactId>
-        <version>1.0.14</version>
+        <version>2.0.100-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
 
@@ -33,7 +33,7 @@
         <connection>scm:git:https://github.com/adobe/aem-core-forms-components</connection>
         <developerConnection>scm:git:git@github.com:adobe/aem-core-forms-components.git</developerConnection>
         <url>https://github.com/adobe/aem-core-forms-components</url>
-        <tag>core-forms-components-reactor-1.0.14</tag>
+        <tag>HEAD</tag>
     </scm>
     <organization>
         <name>Adobe</name>
@@ -52,15 +52,15 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vault.package.version>${project.version}</vault.package.version>
+        <main.basedir>${project.basedir}/../../parent</main.basedir>
     </properties>
 
     <!-- ====================================================================== -->
     <!-- B U I L D   D E F I N I T I O N                                        -->
     <!-- ====================================================================== -->
     <build>
-        <sourceDirectory>src/content/jcr_root</sourceDirectory>
+        <sourceDirectory>src/main/content/jcr_root</sourceDirectory>
         <resources>
-            <!-- define the resources that will go into the package -->
             <resource>
                 <!--
                     we want to keep some of the META-INF files and not configure
@@ -69,53 +69,15 @@
                 <directory>${basedir}/src/main/content/META-INF</directory>
                 <targetPath>../vault-work/META-INF</targetPath>
             </resource>
-            <resource>
-                <directory>${basedir}/src/main/content/jcr_root</directory>
-                <targetPath>.</targetPath>
-                <filtering>false</filtering>
-                <excludes>
-                    <exclude>**/.vlt</exclude>
-                    <exclude>**/.vltignore</exclude>
-                    <exclude>**/*.iml</exclude>
-                    <exclude>**/.classpath</exclude>
-                    <exclude>**/.project</exclude>
-                    <exclude>**/.settings/**</exclude>
-                    <exclude>**/.DS_Store</exclude>
-                    <exclude>**/target/**</exclude>
-                    <!-- Exclude un-transpiled JavaScript files -->
-                    <exclude>**/js/**</exclude>
-                </excludes>
-            </resource>
         </resources>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-remote-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>process</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/vault-work</outputDirectory>
-                            <attached>false</attached>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.day.jcr.vault</groupId>
-                <artifactId>content-package-maven-plugin</artifactId>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>filevault-package-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
                     <group>${vault.package.group}</group>
-                    <properties>
-                        <acHandling>overwrite</acHandling>
-                        <description>${project.description}</description>
-                        <created>${buildNumber}</created>
-                        <createdBy>${vault.package.company}</createdBy>
-                    </properties>
-                    <filterSource>${basedir}/META-INF/vault/filter.xml</filterSource>
+                    <packageType>application</packageType>
                     <dependencies>
                         <dependency>
                             <group>adobe/cq60</group>
@@ -125,10 +87,43 @@
                         <dependency>
                             <group>${vault.package.group}</group>
                             <name>core-forms-components-apps</name>
+                            <version>(1.0.52,)</version>
+                        </dependency>
+                        <dependency>
+                            <group>${vault.package.group}</group>
+                            <name>core-forms-components-af-apps</name>
                             <version>${project.version}</version>
                         </dependency>
                     </dependencies>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.day.jcr.vault</groupId>
+                <artifactId>content-package-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.sling</groupId>
+                <artifactId>htl-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validate-htl-scripts</id>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <generateJavaClasses>true</generateJavaClasses>
+                            <generatedJavaClassesPrefix>org.apache.sling.scripting.sightly</generatedJavaClassesPrefix>
+                            <allowedExpressionOptions>
+                                <allowedExpressionOption>cssClassName</allowedExpressionOption>
+                                <allowedExpressionOption>decoration</allowedExpressionOption>
+                                <allowedExpressionOption>decorationTagName</allowedExpressionOption>
+                                <allowedExpressionOption>wcmmode</allowedExpressionOption>
+                            </allowedExpressionOptions>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>
@@ -139,64 +134,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <!-- ====================================================================== -->
-    <!-- P R O F I L E S                                                        -->
-    <!-- ====================================================================== -->
-    <profiles>
-        <profile>
-            <id>autoInstallPackage</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.day.jcr.vault</groupId>
-                        <artifactId>content-package-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-package</id>
-                                <goals>
-                                    <goal>install</goal>
-                                </goals>
-                                <configuration>
-                                    <targetURL>${quickstart.url}/crx/packmgr/service.jsp</targetURL>
-                                    <failOnError>true</failOnError>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>autoInstallPackagePublish</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.day.jcr.vault</groupId>
-                        <artifactId>content-package-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-package-publish</id>
-                                <goals>
-                                    <goal>install</goal>
-                                </goals>
-                                <configuration>
-                                    <targetURL>${quickstart.url}/crx/packmgr/service.jsp</targetURL>
-                                    <failOnError>true</failOnError>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <!-- ====================================================================== -->
     <!-- D E P E N D E N C I E S                                                -->

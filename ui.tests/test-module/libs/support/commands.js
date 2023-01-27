@@ -40,6 +40,9 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
+import 'cypress-file-upload';
+import { recurse } from 'cypress-recurse'
+
 const commons = require('../commons/commons'),
     siteSelectors = require('../commons/sitesSelectors'),
     siteConstants = require('../commons/sitesConstants'),
@@ -124,13 +127,10 @@ const waitForEditorToInitialize = () => {
     });
 };
 
-// Cypress command to open authoring page
-Cypress.Commands.add("openAuthoring", (pagePath) => {
+// Cypress command to open Site authoring page
+Cypress.Commands.add("openSiteAuthoring", (pagePath) => {
     const editorPageUrl = cy.af.getEditorUrl(pagePath);
     const isEventComplete = {};
-    const baseUrl = Cypress.env('crx.contextPath') ?  Cypress.env('crx.contextPath') : "";
-    cy.visit(baseUrl);
-    cy.login(baseUrl);
     cy.enableOrDisableTutorials(false);
     cy.visit(editorPageUrl).then(waitForEditorToInitialize);
     // Granite's frame bursting technique to prevent click jacking is not known by Cypress, hence this override is done
@@ -153,13 +153,20 @@ Cypress.Commands.add("openAuthoring", (pagePath) => {
 });
 
 // Cypress command to open authoring page
+Cypress.Commands.add("openAuthoring", (pagePath) => {
+    const baseUrl = Cypress.env('crx.contextPath') ?  Cypress.env('crx.contextPath') : "";
+    cy.visit(baseUrl);
+    cy.login(baseUrl);
+    cy.openSiteAuthoring(pagePath);
+});
+
+// Cypress command to open authoring page
 Cypress.Commands.add("openPage", (pagePath) => {
     const baseUrl = Cypress.env('crx.contextPath') ?  Cypress.env('crx.contextPath') : "";
     cy.visit(baseUrl);
     cy.login(baseUrl);
     cy.visit(pagePath);
 });
-
 
 // cypress command to select layer in authoring
 Cypress.Commands.add("selectLayer", (layer) => {
@@ -199,13 +206,10 @@ Cypress.Commands.add("openEditableToolbar", (selector) => {
     })
 });
 
-
 // cypress command to invoke an editable action
 Cypress.Commands.add("invokeEditableAction", (actionSelector) => {
-    cy.get(actionSelector).click();
+    cy.get(actionSelector).should('be.visible').click({force: true});
 });
-
-
 
 // cypress command to initialize event handler on channel
 Cypress.Commands.add("initializeEventHandlerOnChannel", (eventName) => {
@@ -240,6 +244,51 @@ Cypress.Commands.add("initializeEventHandlerOnWindow", (eventName) => {
     return cy.wrap(isEventComplete); // return a chainable object
 });
 
+const waitForFormInit = () => {
+    const INIT_EVENT = "AF_FormContainerInitialised"
+    return cy.document().then(document => {
+        cy.get('form').then(($form) => {
+            const promise = new Cypress.Promise((resolve, reject) => {
+                const listener1 = e => {
+                    const isReady = () => {
+                        if (!($form[0].classList.contains("cmp-adaptiveform-container--loading"))) {
+                            resolve(e.detail);
+                        }
+                        setTimeout(isReady, 0)
+                    }
+                    isReady();
+                }
+                document.addEventListener(INIT_EVENT, listener1);
+            })
+            return promise
+        });
+    })
+}
+
+const waitForChildViewAddition = () => {
+    return cy.get('[data-cmp-is="adaptiveFormContainer"]')
+        .then((el) => {
+            const ADD_EVENT = "AF_PanelInstanceAdded";
+            const promise = new Cypress.Promise((resolve, reject) => {
+                const listener1 = e => {
+                    resolve(e.detail.formContainer);
+                };
+                el[0].addEventListener(ADD_EVENT, listener1);
+            })
+            return promise;
+        });
+}
+
+Cypress.Commands.add("previewForm", (formPath) => {
+    const pagePath = `${formPath}?wcmmode=disabled`
+    return cy.openPage(pagePath).then(waitForFormInit)
+})
+
+Cypress.Commands.add("previewFormWithPanel", (formPath) => {
+    const pagePath = `${formPath}?wcmmode=disabled`
+    return cy.openPage(pagePath).then(waitForChildViewAddition)
+})
+
 // cypress command to delete component by path
 Cypress.Commands.add("deleteComponentByPath", (componentPath) => {
     const editableUpdateEvent = siteConstants.EVENT_NAME_EDITABLES_UPDATED,
@@ -265,11 +314,83 @@ Cypress.Commands.add("deleteComponentByPath", (componentPath) => {
 Cypress.Commands.add("insertComponent", (selector, componentString, componentType) => {
     //Open toolbar of root panel
     const insertComponentDialog_Selector = '.InsertComponentDialog-components [value="' + componentType + '"]',
-        insertComponentDialog_searchField = ".InsertComponentDialog-components input";
+        insertComponentDialog_searchField = ".InsertComponentDialog-components input[type='search']";
     cy.openEditableToolbar(selector);
     cy.get(guideSelectors.editableToolbar.actions.insert).should('be.visible').click();
-    cy.get(insertComponentDialog_searchField).type(componentString).type('{enter}');
+    recurse(
+        // the commands to repeat, and they yield the input element
+        () => cy.get(insertComponentDialog_searchField).clear().type(componentString),
+        // the predicate takes the output of the above commands
+        // and returns a boolean. If it returns true, the recursion stops
+        ($input) => $input.val() === componentString,
+    )
+    cy.get(insertComponentDialog_searchField).type('{enter}');
     cy.get(insertComponentDialog_Selector).should('be.visible');// basically should assertions does implicit retry in cypress
     // refer https://docs.cypress.io/guides/references/error-messages.html#cy-failed-because-the-element-you-are-chaining-off-of-has-become-detached-or-removed-from-the-dom
     cy.get(insertComponentDialog_Selector).click({force: true}); // sometimes AEM popover is visible, hence adding force here
+});
+
+/**
+ * Simulates a paste event.
+ * Modified from https://gist.github.com/nickytonline/bcdef8ef00211b0faf7c7c0e7777aaf6
+ *
+ * @param subject A jQuery context representing a DOM element.
+ * @param pasteOptions Set of options for a simulated paste event.
+ * @param pasteOptions.pastePayload Simulated data that is on the clipboard.
+ * @param pasteOptions.pasteFormat The format of the simulated paste payload. Default value is 'text'.
+ *
+ * @returns The subject parameter.
+ *
+ * @example
+ * cy.get('body').paste({
+ *   pasteType: 'application/json',
+ *   pastePayload: {hello: 'yolo'},
+ * });
+ */
+Cypress.Commands.add(
+    'paste',
+    {prevSubject: true},
+    function (subject, pasteOptions) {
+        const {pastePayload, pasteType} = pasteOptions;
+        const data = pasteType === 'application/json' ? JSON.stringify(pastePayload) : pastePayload;
+        // https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
+        const clipboardData = new DataTransfer();
+        clipboardData.setData(pasteType, data);
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
+        // It's possible to construct and dispatch a synthetic paste event, but this will not affect the document's contents.
+        const pasteEvent = new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            dataType: pasteType,
+            data,
+            clipboardData,
+        });
+        subject[0].dispatchEvent(pasteEvent);
+        return subject;
+    }
+);
+
+
+// cypress command to click ? and toggle description and tooltip
+Cypress.Commands.add("toggleDescriptionTooltip", (bemBlock, fieldId, shortDescriptionText, longDescriptionText) => {
+    if (!shortDescriptionText) {
+        shortDescriptionText = 'This is short description';
+    }
+    if (!longDescriptionText) {
+        longDescriptionText = 'This is long description';
+    }
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__shortdescription`).invoke('attr', 'data-cmp-visible=false')
+    .should('not.exist');
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__shortdescription`)
+        .should('contain.text', shortDescriptionText);
+    // click on ? mark
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__questionmark`).click();
+    // long description should be shown
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__longdescription`).invoke('attr', 'data-cmp-visible')
+    .should('not.exist');
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__longdescription`)
+        .should('contain.text', longDescriptionText);
+    // short description should be hidden.
+    cy.get(`#${fieldId}`).find(`.${bemBlock}__shortdescription`).invoke('attr', 'data-cmp-visible')
+    .should('eq', 'false');
 });

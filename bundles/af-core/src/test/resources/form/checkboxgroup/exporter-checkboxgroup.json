@@ -1,0 +1,65 @@
+{
+  "id": "checkboxgroup-93e681dfb9",
+  "dataRef": "a.b",
+  "fieldType": "checkbox-group",
+  "name": "abc",
+  "visible": false,
+  "description": "dummy",
+  "tooltip": "test-short-description",
+  "type": "number[]",
+  "required": false,
+  "enabled": true,
+  "minItems": 1,
+  "maxItems": 2,
+  "constraintMessages": {
+    "type": "incorrect type"
+  },
+  "readOnly": false,
+  "enforceEnum": true,
+  "enumNames": [
+    "m",
+    "f",
+    "o"
+  ],
+  "default": [
+    0,
+    1
+  ],
+  "label": {
+    "richText": false,
+    "visible": true,
+    "value": "def"
+  },
+  "screenReaderText": "'Custom screen reader text'",
+  "events": {
+    "custom:event": [
+      "e2"
+    ],
+    "change": [
+      "e1",
+      "e2"
+    ],
+    "custom:setProperty": [
+      "$event.payload"
+    ],
+    "click": [
+      "e1"
+    ]
+  },
+  "properties": {
+    "afs:layout": {
+      "tooltipVisible": false,
+      "orientation": "horizontal"
+    },
+    "fd:dor": {
+      "dorExclusion": false
+    },
+    "fd:path": "/content/checkboxgroup"
+  },
+  "enum": [
+    0,
+    1,
+    2
+  ],
+  ":type": "core/fd/components/form/checkboxgroup/v1/checkboxgroup"
+}

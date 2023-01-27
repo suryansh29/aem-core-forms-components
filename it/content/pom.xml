@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.adobe.aem</groupId>
         <artifactId>core-forms-components-parent</artifactId>
-        <version>1.0.14</version>
+        <version>2.0.100-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
 
@@ -34,7 +34,7 @@
         <connection>scm:git:https://github.com/adobe/aem-core-forms-components</connection>
         <developerConnection>scm:git:git@github.com:adobe/aem-core-forms-components.git</developerConnection>
         <url>https://github.com/adobe/aem-core-forms-components</url>
-        <tag>core-forms-components-reactor-1.0.14</tag>
+        <tag>HEAD</tag>
     </scm>
     <organization>
         <name>Adobe</name>
@@ -59,6 +59,17 @@
     <!-- B U I L D   D E F I N I T I O N                                        -->
     <!-- ====================================================================== -->
     <build>
+        <sourceDirectory>src/main/content/jcr_root</sourceDirectory>
+        <resources>
+            <resource>
+                <!--
+                    we want to keep some of the META-INF files and not configure
+                    everything in the plugin.
+                -->
+                <directory>${basedir}/src/main/content/META-INF</directory>
+                <targetPath>../vault-work/META-INF</targetPath>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.jackrabbit</groupId>
@@ -67,12 +78,7 @@
                 <configuration>
                     <group>${vault.package.group}</group>
                     <packageType>content</packageType>
-                    <properties>
-                        <description>${project.description}</description>
-                        <created>${buildNumber}</created>
-                        <createdBy>${vault.package.company}</createdBy>
-                        <cloudManagerTarget>none</cloudManagerTarget>
-                    </properties>
+                    <accessControlHandling>merge</accessControlHandling>
                     <validatorsSettings>
                         <jackrabbit-nodetypes>
                             <isDisabled>true</isDisabled>

@@ -1,0 +1,58 @@
+<!--/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright 2021 Adobe
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/-->
+
+<sly data-sly-use.renderer="${'dropdown.js'}"
+     data-sly-use.clientlib="${'/libs/granite/sightly/templates/clientlib.html'}"
+     data-sly-use.label="${renderer.labelPath}"
+     data-sly-use.shortDescription="${renderer.shortDescriptionPath}"
+     data-sly-use.longDescription="${renderer.longDescriptionPath}"
+     data-sly-use.errorMessage="${renderer.errorMessagePath}"
+     data-sly-use.questionMark="${renderer.questionMarkPath}"></sly>
+<div class="cmp-adaptiveform-dropdown"
+     data-sly-use.formstructparser="com.adobe.cq.forms.core.components.models.form.FormStructureParser"
+     data-sly-use.dropdown="com.adobe.cq.forms.core.components.models.form.DropDown"
+     data-sly-use.component="com.adobe.cq.wcm.core.components.models.Component"
+     data-cmp-is="adaptiveFormDropDown"
+     id="${component.id}"
+     data-cmp-visible="${dropdown.visible ? 'true' : 'false'}"
+     data-cmp-enabled="${dropdown.enabled ? 'true' : 'false'}"
+     data-cmp-adaptiveformcontainer-path="${formstructparser.formContainerPath}">
+    <div data-sly-call="${label.label @componentId=component.id, labelValue=dropdown.label.value, labelVisible=dropdown.label.visible, bemBlock='cmp-adaptiveform-dropdown'}" data-sly-unwrap></div>
+    <div data-sly-call="${questionMark.questionMark @componentId=component.id, longDescription=dropdown.description, bemBlock='cmp-adaptiveform-dropdown'}" data-sly-unwrap></div>
+    <select class="cmp-adaptiveform-dropdown__widget"
+            aria-label="${dropdown.label.visible && dropdown.label.value}"
+            title="${dropdown.tooltipVisible ? '' : dropdown.tooltipText}"
+            name="${dropdown.name}"
+            disabled="${!dropdown.enabled || dropdown.readOnly}"
+            required="${dropdown.required}"
+            data-sly-attribute.multiple="${dropdown.isMultiSelect ? 'multiple' : ''}"
+            aria-readonly="${dropdown.readOnly ? 'true' : 'false'}">
+        <div data-sly-test.isPlaceHolderSet="${dropdown.placeHolder != null}" data-sly-unwrap></div>
+        <option data-sly-test="${!isPlaceHolderSet}" id="emptyValue" role="none" style="display: none;"></option>
+        <option data-sly-test="${isPlaceHolderSet}" value="" disabled selected>${dropdown.placeHolder}</option>
+        <div data-sly-list.enumName="${dropdown.enumNames}" data-sly-unwrap>
+            <div data-sly-test="${enumName != null && dropdown.enums[enumNameList.index] != null}" data-sly-unwrap>
+                <option value="${dropdown.enums[enumNameList.index].toString}"
+                        class="cmp-adaptiveform-dropdown__option"
+                        data-sly-attribute.selected="${dropdown.enums[enumNameList.index] in dropdown.default ? 'selected' : ''}">${enumName}</option>
+            </div>
+        </div>
+    </select>
+    <div data-sly-call="${shortDescription.shortDescription @componentId=component.id, shortDescriptionVisible=dropdown.tooltipVisible, shortDescription=dropdown.tooltip, bemBlock='cmp-adaptiveform-dropdown'}" data-sly-unwrap>
+    </div>
+    <div data-sly-call="${longDescription.longDescription @componentId=component.id, longDescription=dropdown.description, bemBlock='cmp-adaptiveform-dropdown'}" data-sly-unwrap></div>
+    <div data-sly-call="${errorMessage.errorMessage @componentId=component.id, bemBlock='cmp-adaptiveform-dropdown'}" data-sly-unwrap></div>
+</div>

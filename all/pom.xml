@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.adobe.aem</groupId>
         <artifactId>core-forms-components-parent</artifactId>
-        <version>1.0.14</version>
+        <version>2.0.100-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -39,7 +39,7 @@
         <connection>scm:git:https://github.com/adobe/aem-core-forms-components</connection>
         <developerConnection>scm:git:git@github.com:adobe/aem-core-forms-components.git</developerConnection>
         <url>https://github.com/adobe/aem-core-forms-components</url>
-        <tag>core-forms-components-reactor-1.0.14</tag>
+        <tag>HEAD</tag>
     </scm>
     <organization>
         <name>Adobe</name>
@@ -57,6 +57,7 @@
     <!-- ====================================================================== -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <main.basedir>${project.basedir}/../parent</main.basedir>
     </properties>
 
     <!-- ====================================================================== -->
@@ -77,11 +78,21 @@
                             <artifactId>core-forms-components-core</artifactId>
                             <filter>true</filter>
                         </embedded>
+                        <embedded>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>core-forms-components-af-core</artifactId>
+                            <filter>true</filter>
+                        </embedded>
                     </embeddeds>
                     <subPackages>
                         <subPackage>
                             <groupId>${project.groupId}</groupId>
                             <artifactId>core-forms-components-apps</artifactId>
+                            <filter>true</filter>
+                        </subPackage>
+                        <subPackage>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>core-forms-components-af-apps</artifactId>
                             <filter>true</filter>
                         </subPackage>
                     </subPackages>
@@ -108,6 +119,19 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>core-forms-components-apps</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>core-forms-components-af-core</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>core-forms-components-af-apps</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
             <scope>provided</scope>

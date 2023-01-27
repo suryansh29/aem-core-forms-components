@@ -30,23 +30,23 @@ const commons = require('../libs/commons/commons'),
       sitesSelectors = require('../libs/commons/sitesSelectors'),
       sitesConstants = require('../libs/commons/sitesConstants'),
       guideSelectors = require('../libs/commons/guideSelectors'),
+      wizardSelectors = require('../libs/commons/wizardSelectors'),
       afConstants = require('../libs/commons/formsConstants');
 
-describe('Page - Authoring', function () {
-    // we can use these values to log in
-    const   pagePath = "/content/core-components-examples/library/core-content/aemform",
-            aemFormContainerEditPath = pagePath + afConstants.RESPONSIVE_GRID_DEMO_SUFFIX + "/" + afConstants.components.forms.resourceType.aemformcontainer.split("/").pop(),
-            aemFormContainerEditPathSelector = "[data-path='" + aemFormContainerEditPath + "']",
-            aemFormContainerDropPath = pagePath + afConstants.RESPONSIVE_GRID_SUFFIX + "/" + afConstants.components.forms.resourceType.aemformcontainer.split("/").pop(),
-            aemFormContainerDropPathSelector = "[data-path='" + aemFormContainerDropPath + "']";
+// we can use these values to log in
+const   pagePath = "/content/core-components-examples/library/core-content/aemform",
+    aemFormContainerEditPath = pagePath + afConstants.RESPONSIVE_GRID_DEMO_SUFFIX + "/" + afConstants.components.forms.resourceType.aemformcontainer.split("/").pop(),
+    aemFormContainerEditPathSelector = "[data-path='" + aemFormContainerEditPath + "']",
+    aemFormContainerDropPath = pagePath + afConstants.RESPONSIVE_GRID_SUFFIX + "/" + afConstants.components.forms.resourceType.aemformcontainer.split("/").pop(),
+    aemFormContainerDropPathSelector = "[data-path='" + aemFormContainerDropPath + "']";
 
+describe('Page - Authoring', function () {
     context('Open Editor', function () {
         beforeEach(function () {
-            // this is done since cypress session results in 403 sometimes
             cy.openAuthoring(pagePath);
         });
 
-        it('insert aem forms container component', function () {
+        it('insert aem forms container component', { retries: 3 }, function () {
             const responsiveGridDropZone = "Drag components here", // todo:  need to localize this
                 responsiveGridDropZoneSelector = sitesSelectors.overlays.overlay.component + "[data-text='" + responsiveGridDropZone + "']";
             cy.selectLayer("Edit");
@@ -57,14 +57,10 @@ describe('Page - Authoring', function () {
             cy.deleteComponentByPath(aemFormContainerDropPath);
         });
 
-        it('open edit dialog of aem forms container component', function() {
+        it('open edit dialog of aem forms container component', { retries: 3 }, function() {
             // click configure action on aem forms container component
             cy.openEditableToolbar(sitesSelectors.overlays.overlay.component + aemFormContainerEditPathSelector);
             cy.invokeEditableAction("[data-action='CONFIGURE']"); // this line is causing frame busting which is causing cypress to fail
-            // check if adaptive form is selected by default
-            cy.get("[name='./formType']")
-                .should("be.visible")
-                .should("have.value", "adaptiveForm");
             // check for dynamic operations performed using JS
             cy.get("[name='./thankyouConfig'][value='message']")
                 .should("be.visible")

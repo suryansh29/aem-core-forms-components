@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Field;
 
 import javax.json.Json;
 import javax.json.JsonReader;
@@ -31,25 +30,14 @@ import com.adobe.cq.wcm.core.components.internal.jackson.DefaultMethodSkippingMo
 import com.adobe.cq.wcm.core.components.internal.jackson.PageModuleProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Testing utilities.
  */
 public class Utils {
 
-    /**
-     * Provided a {@code model} object and an {@code expectedJsonResource} identifying a JSON file in the class path,
-     * this method will test the JSON export of the model and compare it to the JSON object provided by the
-     * {@code expectedJsonResource}.
-     *
-     * @param model
-     *            the Sling Model
-     * @param expectedJsonResource
-     *            the class path resource providing the expected JSON object
-     */
-    public static void testJSONExport(Object model, String expectedJsonResource) {
+    public static InputStream getJson(Object model) {
         Writer writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         PageModuleProvider pageModuleProvider = new PageModuleProvider();
@@ -62,7 +50,22 @@ public class Utils {
             fail(String.format("Unable to generate JSON export for model %s: %s", model.getClass().getName(),
                 e.getMessage()));
         }
-        JsonReader outputReader = Json.createReader(IOUtils.toInputStream(writer.toString()));
+        return IOUtils.toInputStream(writer.toString());
+    }
+
+    /**
+     * Provided a {@code model} object and an {@code expectedJsonResource} identifying a JSON file in the class path,
+     * this method will test the JSON export of the model and compare it to the JSON object provided by the
+     * {@code expectedJsonResource}.
+     *
+     * @param model
+     *            the Sling Model
+     * @param expectedJsonResource
+     *            the class path resource providing the expected JSON object
+     */
+    public static void testJSONExport(Object model, String expectedJsonResource) {
+        InputStream modeInputStream = getJson(model);
+        JsonReader outputReader = Json.createReader(modeInputStream);
         InputStream is = Utils.class.getResourceAsStream(expectedJsonResource);
         if (is != null) {
             JsonReader expectedReader = Json.createReader(is);
@@ -98,48 +101,6 @@ public class Utils {
      */
     public static String getTestExporterJSONPath(String testBase, String testResourcePath) {
         return testBase + "/exporter-" + FilenameUtils.getName(testResourcePath) + ".json";
-    }
-
-    /**
-     * Set internal state on a private field.
-     *
-     * @param target target object to set the private field
-     * @param field name of the private field
-     * @param value value of the private field
-     */
-    @SuppressWarnings("squid:S00112")
-    public static void setInternalState(Object target, String field, Object value) {
-        Class<?> c = target.getClass();
-        try {
-            Field f = getFieldFromHierarchy(c, field);
-            f.setAccessible(true);
-            f.set(target, value);
-        } catch (IllegalAccessException | RuntimeException e) {
-            throw new RuntimeException("Unable to set internal state on a private field. Please report to mockito mailing list.", e);
-        }
-    }
-
-    private static Field getFieldFromHierarchy(Class<?> clazz, String field) {
-        Field f = getField(clazz, field);
-        while (f == null && clazz != Object.class) {
-            clazz = clazz.getSuperclass();
-            f = getField(clazz, field);
-        }
-        if (f == null) {
-            throw new IllegalArgumentException(
-                "You want me to get this field: '" + field +
-                    "' on this class: '" + clazz.getSimpleName() +
-                    "' but this field is not declared withing hierarchy of this class!");
-        }
-        return f;
-    }
-
-    private static Field getField(Class<?> clazz, String field) {
-        try {
-            return clazz.getDeclaredField(field);
-        } catch (NoSuchFieldException e) {
-            return null;
-        }
     }
 
 }
